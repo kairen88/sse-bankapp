@@ -22,6 +22,9 @@ import java.sql.SQLException;
 
 import sg.edu.sutd.bank.webapp.commons.ServiceException;
 import sg.edu.sutd.bank.webapp.model.ClientAccount;
+import sg.edu.sutd.bank.webapp.model.ClientTransaction;
+import sg.edu.sutd.bank.webapp.model.TransactionStatus;
+import sg.edu.sutd.bank.webapp.model.User;
 
 public class ClientAccountDAOImpl extends AbstractDAOImpl implements ClientAccountDAO {
 
@@ -61,5 +64,34 @@ public class ClientAccountDAOImpl extends AbstractDAOImpl implements ClientAccou
 			closeDb(conn, ps, rs);
 		}
 	}
+	
+	@Override
+	public ClientAccount load(int userId) throws ServiceException {
+		Connection conn = connectDB();
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+		try {
+			ps = prepareStmt(conn, "SELECT * FROM client_account WHERE user_id = ?");
+			ps.setInt(1, userId);
+			rs = ps.executeQuery();
+			
+			ClientAccount acct = null;
+			if (rs.next()) {
+				acct = new ClientAccount();
+				User usr = new User();
+				usr.setId(rs.getInt("user_id"));
+				acct.setUser(usr);
+				acct.setAmount(rs.getBigDecimal("amount"));
+			}
+			return acct;
+			
+		} catch (SQLException e) {
+			throw ServiceException.wrap(e);
+		} finally {
+			closeDb(conn, ps, rs);
+		}
+	}
+	
+	
 
 }

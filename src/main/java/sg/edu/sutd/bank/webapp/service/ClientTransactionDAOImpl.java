@@ -78,6 +78,36 @@ public class ClientTransactionDAOImpl extends AbstractDAOImpl implements ClientT
 			closeDb(conn, ps, rs);
 		}
 	}
+	
+	@Override
+	public ClientTransaction load(int transId) throws ServiceException {
+		Connection conn = connectDB();
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+		try {
+			ps = conn.prepareStatement(
+					"SELECT * FROM client_transaction WHERE id = ?"); //SHOULD NOT USE SELECT *
+			int idx = 1;
+			ps.setInt(1, transId);
+			rs = ps.executeQuery();
+			ClientTransaction trans = null;
+			if (rs.next()) {
+				trans = new ClientTransaction();
+				trans.setId(rs.getInt("id"));
+				trans.setUser(new User(rs.getInt("user_id")));
+				trans.setAmount(rs.getBigDecimal("amount"));
+				trans.setDateTime(rs.getDate("datetime"));
+				trans.setStatus(TransactionStatus.of(rs.getString("status")));
+				trans.setTransCode(rs.getString("trans_code"));
+				trans.setToAccountNum(rs.getString("to_account_num"));
+			}
+			return trans;
+		} catch (SQLException e) {
+			throw ServiceException.wrap(e);
+		} finally {
+			closeDb(conn, ps, rs);
+		}
+	}
 
 	@Override
 	public List<ClientTransaction> loadWaitingList() throws ServiceException {
@@ -141,75 +171,85 @@ public class ClientTransactionDAOImpl extends AbstractDAOImpl implements ClientT
 		}
 	}
 	
-	@Override
-	public void initiateTransaction(List<ClientTransaction> transactions) throws ServiceException {
-
-		//get all approved transactions
-		StringBuilder getApprTransQuery = new StringBuilder("SELECT trans_code, status, amount, user_id, to_account_num FROM client_transaction WHERE status='APPROVED';");
-		
-		Connection conn = connectDB();
-		PreparedStatement ps = null;
-		ResultSet rs = null;
-		try {
-			ps = conn.prepareStatement(getApprTransQuery.toString());
-			rs = ps.executeQuery();
-			
-			ArrayList<ClientTransaction> aprvTransList = new ArrayList<ClientTransaction>();
-			
-			while (rs.next()) {
-				ClientTransaction ct = new ClientTransaction();
-				ct.setTransCode(rs.getString("trans_code"));
-				ct.setStatus(TransactionStatus.of(rs.getString("status")));
-				ct.setAmount(rs.getBigDecimal("amount"));
-				ct.setUser(new User(rs.getInt("user_id")));
-				ct.setToAccountNum(rs.getString("to_account_num"));
-				aprvTransList.add(ct);
-				rs.next();
-			}
-			
-			//for each transaction
-			for(ClientTransaction trans : aprvTransList)
-			{
-				//read amt from sender acct
-				ps = conn.prepareStatement("SELECT amount FROM client_account WHERE user_id = ?");
-				ps.setInt(1,  trans.getUser().getId());
-				rs = ps.executeQuery();
-				BigDecimal senderAcctAmount = null;
-				if (rs.next()) {
-					senderAcctAmount = rs.getBigDecimal("amount");
-				}
-				//debit from sender acct
-				if(senderAcctAmount != null) {
-					ps = conn.prepareStatement("UPDATE client_account SET amount = ? WHERE user_id = ?");
-					ps.setBigDecimal(1,  senderAcctAmount.subtract(trans.getAmount()));
-					ps.setInt(2,  trans.getUser().getId());
-					ps.executeUpdate();
-				}
-				
-				//read amt from receiver acct
-				ps = conn.prepareStatement("SELECT ca.amount, u.id FROM client_account ca, user u WHERE u.id = ca.user_id AND u.user_name = ?");
-				ps.setString(1,  trans.getToAccountNum());
-				rs = ps.executeQuery();
-				BigDecimal recieverAcctAmount = null;
-				int userId = -1;
-				if (rs.next()) {
-					recieverAcctAmount = rs.getBigDecimal("amount");
-					userId = rs.getInt("id");
-				}
-				
-				//credit receiver acct
-				if(recieverAcctAmount != null && userId != -1) {
-					ps = conn.prepareStatement("UPDATE client_account SET amount = ? WHERE user_id = ?");
-					ps.setBigDecimal(1,  recieverAcctAmount.add(trans.getAmount()));
-					ps.setInt(2,  userId);
-					ps.executeUpdate();
-				}
-			}
-		} catch (SQLException e) {
-			throw ServiceException.wrap(e);
-		} finally {
-			closeDb(conn, ps, rs);
-		}
+//	@Override
+//	public void initiateTransaction(List<ClientTransaction> transactions) throws ServiceException {
+//
+//		//get all approved transactions
+//		StringBuilder getApprTransQuery = new StringBuilder("SELECT trans_code, status, amount, user_id, to_account_num FROM client_transaction WHERE status='APPROVED';");
+//		
+//		Connection conn = connectDB();
+//		PreparedStatement ps = null;
+//		ResultSet rs = null;
+//		try {
+//			ps = conn.prepareStatement(getApprTransQuery.toString());
+//			rs = ps.executeQuery();
+//			
+//			ArrayList<ClientTransaction> aprvTransList = new ArrayList<ClientTransaction>();
+//			
+//			while (rs.next()) {
+//				ClientTransaction ct = new ClientTransaction();
+//				ct.setTransCode(rs.getString("trans_code"));
+//				ct.setStatus(TransactionStatus.of(rs.getString("status")));
+//				ct.setAmount(rs.getBigDecimal("amount"));
+//				ct.setUser(new User(rs.getInt("user_id")));
+//				ct.setToAccountNum(rs.getString("to_account_num"));
+//				aprvTransList.add(ct);
+//				rs.next();
+//			}
+//			
+//			//for each transaction
+//			for(ClientTransaction trans : aprvTransList)
+//			{
+//				//should update with ClientAccountDAO instead
+//				
+//				//read amt from sender acct
+//				ps = conn.prepareStatement("SELECT amount FROM client_account WHERE user_id = ?");
+//				ps.setInt(1,  trans.getUser().getId());
+//				rs = ps.executeQuery();
+//				BigDecimal senderAcctAmount = null;
+//				if (rs.next()) {
+//					senderAcctAmount = rs.getBigDecimal("amount");
+//				}
+//				//debit from sender acct
+//				if(senderAcctAmount != null) {
+//					ps = conn.prepareStatement("UPDATE client_account SET amount = ? WHERE user_id = ?");
+//					ps.setBigDecimal(1,  senderAcctAmount.subtract(trans.getAmount()));
+//					ps.setInt(2,  trans.getUser().getId());
+//					ps.executeUpdate();
+//				}
+//				
+//				//read amt from receiver acct
+//				ps = conn.prepareStatement("SELECT ca.amount, u.id FROM client_account ca, user u WHERE u.id = ca.user_id AND u.user_name = ?");
+//				ps.setString(1,  trans.getToAccountNum());
+//				rs = ps.executeQuery();
+//				BigDecimal recieverAcctAmount = null;
+//				int userId = -1;
+//				if (rs.next()) {
+//					recieverAcctAmount = rs.getBigDecimal("amount");
+//					userId = rs.getInt("id");
+//				}
+//				
+//				//credit receiver acct
+//				if(recieverAcctAmount != null && userId != -1) {
+//					ps = conn.prepareStatement("UPDATE client_account SET amount = ? WHERE user_id = ?");
+//					ps.setBigDecimal(1,  recieverAcctAmount.add(trans.getAmount()));
+//					ps.setInt(2,  userId);
+//					ps.executeUpdate();
+//				}
+//				
+//				//update decision status to COMPLETE
+//				if(recieverAcctAmount != null && userId != -1) {
+//					ps = conn.prepareStatement("UPDATE client_transaction SET status = ? WHERE trans_code like ?");
+//					ps.setString(1, TransactionStatus.COMPLETED.toString());
+//					ps.setString(2, trans.getTransCode());
+//					ps.executeUpdate();
+//				}
+//			}
+//		} catch (SQLException e) {
+//			throw ServiceException.wrap(e);
+//		} finally {
+//			closeDb(conn, ps, rs);
+//		}
 		
 //		StringBuilder query = new StringBuilder("UPDATE client_transaction SET status = Case id ");
 //		for (ClientTransaction trans : transactions) {
@@ -291,6 +331,6 @@ public class ClientTransactionDAOImpl extends AbstractDAOImpl implements ClientT
 //		} finally {
 //			closeDb(conn, ps, rs);
 //		}
-	}
+//	}
 
 }

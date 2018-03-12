@@ -17,10 +17,14 @@ package sg.edu.sutd.bank.webapp.service;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 
 import sg.edu.sutd.bank.webapp.commons.ServiceException;
+import sg.edu.sutd.bank.webapp.model.ClientTransaction;
+import sg.edu.sutd.bank.webapp.model.TransactionStatus;
+import sg.edu.sutd.bank.webapp.model.User;
 
 public class TransactionCodesDAOImp extends AbstractDAOImpl implements TransactionCodesDAO {
 
@@ -45,6 +49,46 @@ public class TransactionCodesDAOImp extends AbstractDAOImpl implements Transacti
 				ps.setInt(idx++, userId);
 				ps.setBoolean(idx++, false);
 			}
+			int rowNum = ps.executeUpdate();
+			if (rowNum == 0) {
+				throw new SQLException("Update failed, no rows affected!");
+			}
+		} catch (SQLException e) {
+			throw ServiceException.wrap(e);
+		}
+	}
+	
+	@Override
+	public int loadStatus(String transCode) throws ServiceException {
+		Connection conn = connectDB();
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+		try {
+			ps = conn.prepareStatement(
+					"SELECT used FROM transaction_code WHERE code = ?"); //SHOULD NOT USE SELECT *
+			int idx = 1;
+			ps.setString(1, transCode);
+			rs = ps.executeQuery();
+			if(rs.next())
+			{
+				return rs.getInt("used");
+			}
+		} catch (SQLException e) {
+			throw ServiceException.wrap(e);
+		} finally {
+			closeDb(conn, ps, rs);
+		}
+		return -1;
+	}
+	
+	@Override
+	public void update(String code, int status) throws ServiceException {
+		Connection conn = connectDB();
+		try {
+			PreparedStatement ps = conn.prepareStatement("UPDATE transaction_code SET used = ? WHERE code = ?");
+			ps.setInt(1, status);
+			ps.setString(2, code);		
+		
 			int rowNum = ps.executeUpdate();
 			if (rowNum == 0) {
 				throw new SQLException("Update failed, no rows affected!");

@@ -22,5 +22,9 @@ import sg.edu.sutd.bank.webapp.commons.ServiceException;
 public interface TransactionCodesDAO {
 
 	void create(List<String> codes, int userId) throws ServiceException;
+	
+	public int loadStatus(String transCode) throws ServiceException;
+	
+	public void update(String code, int status) throws ServiceException;
 
 }

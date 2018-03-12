@@ -17,6 +17,7 @@ package sg.edu.sutd.bank.webapp.servlet;
 import static sg.edu.sutd.bank.webapp.servlet.ServletPaths.STAFF_DASHBOARD_PAGE;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -159,8 +160,43 @@ public class StaffDashboardServlet extends DefaultServlet {
 		}
 		if (!transactions.isEmpty()) {
 			try {
-				clientTransactionDAO.updateDecision(transactions); //HOW TO SYNC OR LOCK HERE?
-				clientTransactionDAO.initiateTransaction(transactions);
+				clientTransactionDAO.updateDecision(transactions); 
+				
+				//account update logic should be here				
+				for(ClientTransaction trans: transactions)
+				{
+					//THIS NEEDS TO HAVE A LOCK
+					//get trans
+					ClientTransaction clientTrans = clientTransactionDAO.load(trans.getId()); 
+					//check trans code status
+					int codeStatus = transactionCodesDAO.loadStatus(clientTrans.getTransCode());
+					//NEED TO CHECK TRANS CODE BELONGS TO USER
+					//set trans code to used
+					if(codeStatus == 0)
+					{				
+						//get sender account info
+						ClientAccount senderAcct = clientAccountDAO.load(clientTrans.getUser().getId());
+						//debit sender account
+						BigDecimal senderAmt = senderAcct.getAmount();
+						senderAmt = senderAmt.subtract(clientTrans.getAmount());
+						senderAcct.setAmount(senderAmt);
+						clientAccountDAO.update(senderAcct);
+						
+						//get receiver account info
+						User receiver = userDAO.loadUser(clientTrans.getToAccountNum());
+						ClientAccount recAcct = clientAccountDAO.load(receiver.getId());
+						//credit receiver account
+						BigDecimal recAmt = recAcct.getAmount();
+						recAmt = recAmt.add(clientTrans.getAmount());
+						recAcct.setAmount(recAmt);
+						clientAccountDAO.update(recAcct); //update should be synchronized
+						
+						//set transaction code status to 1 (1 = used, 0 = unused)
+						transactionCodesDAO.update(clientTrans.getTransCode(), 1);
+						
+						//clientTransactionDAO.initiateTransaction(transactions); //HOW TO SYNC OR LOCK HERE?
+					}
+				}
 			} catch (ServiceException e) {
 				sendError(req, e.getMessage());
 			}

@@ -24,5 +24,7 @@ public interface ClientAccountDAO {
 	void create(ClientAccount clientAccount) throws ServiceException;
 
 	void update(ClientAccount clientAccount) throws ServiceException;
+	
+	public ClientAccount load(int userId) throws ServiceException;
 
 }
