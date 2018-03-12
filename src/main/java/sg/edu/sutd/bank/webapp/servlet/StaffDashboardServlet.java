@@ -189,7 +189,7 @@ public class StaffDashboardServlet extends DefaultServlet {
 						BigDecimal recAmt = recAcct.getAmount();
 						recAmt = recAmt.add(clientTrans.getAmount());
 						recAcct.setAmount(recAmt);
-						clientAccountDAO.update(recAcct); //update should be synchronized
+						clientAccountDAO.update(recAcct); //update should be synchronized?
 						
 						//set transaction code status to 1 (1 = used, 0 = unused)
 						transactionCodesDAO.update(clientTrans.getTransCode(), 1);

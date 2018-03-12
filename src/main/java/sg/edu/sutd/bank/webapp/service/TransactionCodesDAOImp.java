@@ -82,6 +82,30 @@ public class TransactionCodesDAOImp extends AbstractDAOImpl implements Transacti
 	}
 	
 	@Override
+	public int loadTransCodeUserId(String transCodeStr) throws ServiceException {
+		Connection conn = connectDB();
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+		try {
+			ps = conn.prepareStatement(
+					"SELECT user_id FROM transaction_code WHERE code = ?"); //SHOULD NOT USE SELECT *
+			int idx = 1;
+			ps.setString(1, transCodeStr);
+			rs = ps.executeQuery();
+			if(rs.next())
+			{
+				System.out.println(rs.getInt("user_id"));
+				return rs.getInt("user_id");
+			}
+		} catch (SQLException e) {
+			throw ServiceException.wrap(e);
+		} finally {
+			closeDb(conn, ps, rs);
+		}
+		return -1;
+	}
+	
+	@Override
 	public void update(String code, int status) throws ServiceException {
 		Connection conn = connectDB();
 		try {

@@ -26,15 +26,25 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import sg.edu.sutd.bank.webapp.commons.ServiceException;
+import sg.edu.sutd.bank.webapp.model.ClientInfo;
 import sg.edu.sutd.bank.webapp.model.ClientTransaction;
 import sg.edu.sutd.bank.webapp.model.User;
+import sg.edu.sutd.bank.webapp.service.ClientAccountDAO;
+import sg.edu.sutd.bank.webapp.service.ClientAccountDAOImpl;
+import sg.edu.sutd.bank.webapp.service.ClientInfoDAO;
+import sg.edu.sutd.bank.webapp.service.ClientInfoDAOImpl;
 import sg.edu.sutd.bank.webapp.service.ClientTransactionDAO;
 import sg.edu.sutd.bank.webapp.service.ClientTransactionDAOImpl;
+import sg.edu.sutd.bank.webapp.service.TransactionCodesDAO;
+import sg.edu.sutd.bank.webapp.service.TransactionCodesDAOImp;
 
 @WebServlet(NEW_TRANSACTION)
 public class NewTransactionServlet extends DefaultServlet {
 	private static final long serialVersionUID = 1L;
 	private ClientTransactionDAO clientTransactionDAO = new ClientTransactionDAOImpl();
+	private ClientInfoDAO clientInfoDAO = new ClientInfoDAOImpl();
+	private TransactionCodesDAO transCodeDAO = new TransactionCodesDAOImp();
+	private ClientAccountDAO clientAcctDAO = new ClientAccountDAOImpl();
 	
 	@Override
 	protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -45,11 +55,43 @@ public class NewTransactionServlet extends DefaultServlet {
 			clientTransaction.setAmount(new BigDecimal(req.getParameter("amount")));
 			clientTransaction.setTransCode(req.getParameter("transcode"));
 			clientTransaction.setToAccountNum(req.getParameter("toAccountNum"));
-			clientTransactionDAO.create(clientTransaction);
-			redirect(resp, ServletPaths.CLIENT_DASHBOARD_PAGE);
+			
+			//check if transaction is valid
+			if(isTransValid(clientTransaction))
+			{
+				clientTransactionDAO.create(clientTransaction);
+				redirect(resp, ServletPaths.CLIENT_DASHBOARD_PAGE);
+			}
 		} catch (ServiceException e) {
 			sendError(req, e.getMessage());
 			forward(req, resp);
 		}
+	}
+	
+	private boolean isTransValid(ClientTransaction clientTrans) throws ServiceException{
+		//transfer amount is > 0
+		if(clientTrans.getAmount().compareTo(BigDecimal.ZERO) < 0)
+		{
+			throw new ServiceException(new Throwable("Transfer amount must be greater than zero"));
+		}
+		//transfer is made to a different account
+		ClientInfo clientInfo = clientInfoDAO.loadAccountInfo(clientTrans.getToAccountNum());
+		if(clientTrans.getUser().getId() == clientInfo.getUser().getId())
+		{
+			throw new ServiceException(new Throwable("Transfer must be made to a different account"));
+		}
+		//transfer Code is valid and has not been used and it belongs to the user
+		if(transCodeDAO.loadStatus(clientTrans.getTransCode()) != 0 ||
+				transCodeDAO.loadTransCodeUserId(clientTrans.getTransCode()) != clientTrans.getUser().getId())
+		{
+			System.out.println(transCodeDAO.loadTransCodeUserId(clientTrans.getTransCode()) +" "+ clientTrans.getUser().getId());
+			throw new ServiceException(new Throwable("Transaction Code is not valid"));
+		}
+		//amount transferred is less than or equal to the current amount in this account
+		if(clientTrans.getAmount().compareTo(clientAcctDAO.load(clientTrans.getUser().getId()).getAmount()) > 0)
+		{
+			throw new ServiceException(new Throwable("Amount transferred is more than current account balance"));
+		}
+		return true;
 	}
 }

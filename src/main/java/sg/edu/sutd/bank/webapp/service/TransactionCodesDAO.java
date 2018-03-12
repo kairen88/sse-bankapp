@@ -25,6 +25,8 @@ public interface TransactionCodesDAO {
 	
 	public int loadStatus(String transCode) throws ServiceException;
 	
+	public int loadTransCodeUserId(String transCodeStr) throws ServiceException;
+	
 	public void update(String code, int status) throws ServiceException;
 
 }
