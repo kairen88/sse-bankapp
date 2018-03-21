@@ -12,6 +12,7 @@
 	<classpathentry kind="lib" path="libs/junit-4.12.jar"/>
 	<classpathentry kind="lib" path="libs/mysql-connector-java-5.1.35.jar"/>
 	<classpathentry kind="lib" path="libs/mysql-connector-java-5.1.35-sources.jar"/>
+	<classpathentry kind="lib" path="libs/evosuite-1.0.5.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jst.server.core.container/org.eclipse.jst.server.tomcat.runtimeTarget/Apache Tomcat v8.5">
 		<attributes>
 			<attribute name="owner.project.facets" value="jst.web"/>
