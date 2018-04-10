@@ -31,6 +31,7 @@ import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.List;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
@@ -43,6 +44,7 @@ import javax.servlet.http.Part;
 import sg.edu.sutd.bank.webapp.commons.ServiceException;
 import sg.edu.sutd.bank.webapp.model.ClientInfo;
 import sg.edu.sutd.bank.webapp.model.ClientTransaction;
+import sg.edu.sutd.bank.webapp.model.TransactionStatus;
 import sg.edu.sutd.bank.webapp.model.User;
 import sg.edu.sutd.bank.webapp.service.ClientAccountDAO;
 import sg.edu.sutd.bank.webapp.service.ClientAccountDAOImpl;
@@ -52,6 +54,8 @@ import sg.edu.sutd.bank.webapp.service.ClientTransactionDAO;
 import sg.edu.sutd.bank.webapp.service.ClientTransactionDAOImpl;
 import sg.edu.sutd.bank.webapp.service.TransactionCodesDAO;
 import sg.edu.sutd.bank.webapp.service.TransactionCodesDAOImp;
+import sg.edu.sutd.bank.webapp.service.UserDAO;
+import sg.edu.sutd.bank.webapp.service.UserDAOImpl;
 
 @MultipartConfig
 @WebServlet(BATCH_TRANSACTION)
@@ -63,6 +67,7 @@ public class BatchTransactionServlet extends DefaultServlet {
 	private ClientInfoDAO clientInfoDAO = new ClientInfoDAOImpl();
 	private TransactionCodesDAO transCodeDAO = new TransactionCodesDAOImp();
 	private ClientAccountDAO clientAcctDAO = new ClientAccountDAOImpl();
+	private UserDAO userDAO = new UserDAOImpl();
 
 	@Override
 	protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -102,16 +107,30 @@ public class BatchTransactionServlet extends DefaultServlet {
 				// create the transaction
 				for (String[] transDetails : batchTransactions) {
 
+					BigDecimal transAmt = new BigDecimal(Double.valueOf(transDetails[1]));
 					ClientTransaction clientTransaction = new ClientTransaction();
 					clientTransaction.setUser(user);
 					clientTransaction.setTransCode(transDetails[0]);
-					clientTransaction.setAmount(new BigDecimal(Double.valueOf(transDetails[1])));
+					clientTransaction.setAmount(transAmt);
 					clientTransaction.setToAccountNum(transDetails[2]);
 
 					if (isTransValid(clientTransaction)) {
 						clientTransactionDAO.create(clientTransaction);
 						// set transaction code status to 1 (1 = used, 0 = unused)
 						transCodeDAO.update(transDetails[0], 1);
+						
+						//if transaction amount < 10.0 auto approve and transfer
+						if(transAmt.compareTo(new BigDecimal(10.0)) < 0)
+						{
+							ClientTransaction trans = clientTransactionDAO.load(transDetails[0]);
+							trans.setStatus(TransactionStatus.APPROVED);
+							List<ClientTransaction> transactions = new ArrayList<ClientTransaction>();
+							transactions.add(trans);
+							clientTransactionDAO.updateDecision(transactions); 
+							User receiver = userDAO.loadUser(transDetails[2]);
+							clientAcctDAO.transferAmount(clientTransaction, receiver);		
+						}
+						
 					}
 				}
 			} catch (ServiceException e) {

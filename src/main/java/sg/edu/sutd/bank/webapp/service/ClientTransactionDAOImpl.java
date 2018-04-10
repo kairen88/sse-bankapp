@@ -107,6 +107,36 @@ public class ClientTransactionDAOImpl extends AbstractDAOImpl implements ClientT
 		} finally {
 			closeDb(conn, ps, rs);
 		}
+	}	
+
+	@Override
+	public ClientTransaction load(String transCode) throws ServiceException {
+		Connection conn = connectDB();
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+		try {
+			ps = conn.prepareStatement(
+					"SELECT * FROM client_transaction WHERE trans_code = ?"); //SHOULD NOT USE SELECT *
+			int idx = 1;
+			ps.setString(1, transCode);
+			rs = ps.executeQuery();
+			ClientTransaction trans = null;
+			if (rs.next()) {
+				trans = new ClientTransaction();
+				trans.setId(rs.getInt("id"));
+				trans.setUser(new User(rs.getInt("user_id")));
+				trans.setAmount(rs.getBigDecimal("amount"));
+				trans.setDateTime(rs.getDate("datetime"));
+				trans.setStatus(TransactionStatus.of(rs.getString("status")));
+				trans.setTransCode(rs.getString("trans_code"));
+				trans.setToAccountNum(rs.getString("to_account_num"));
+			}
+			return trans;
+		} catch (SQLException e) {
+			throw ServiceException.wrap(e);
+		} finally {
+			closeDb(conn, ps, rs);
+		}
 	}
 
 	@Override

@@ -17,6 +17,8 @@ package sg.edu.sutd.bank.webapp.service;
 
 import sg.edu.sutd.bank.webapp.commons.ServiceException;
 import sg.edu.sutd.bank.webapp.model.ClientAccount;
+import sg.edu.sutd.bank.webapp.model.ClientTransaction;
+import sg.edu.sutd.bank.webapp.model.User;
 
 
 public interface ClientAccountDAO {
@@ -25,6 +27,8 @@ public interface ClientAccountDAO {
 
 	void update(ClientAccount clientAccount) throws ServiceException;
 	
-	public ClientAccount load(int userId) throws ServiceException;
+	ClientAccount load(int userId) throws ServiceException;
+	
+	void transferAmount(ClientTransaction clientTrans, User receiver) throws ServiceException;
 
 }

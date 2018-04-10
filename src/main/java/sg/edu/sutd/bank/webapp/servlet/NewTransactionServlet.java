@@ -31,6 +31,7 @@ import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.List;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
@@ -43,6 +44,7 @@ import javax.servlet.http.Part;
 import sg.edu.sutd.bank.webapp.commons.ServiceException;
 import sg.edu.sutd.bank.webapp.model.ClientInfo;
 import sg.edu.sutd.bank.webapp.model.ClientTransaction;
+import sg.edu.sutd.bank.webapp.model.TransactionStatus;
 import sg.edu.sutd.bank.webapp.model.User;
 import sg.edu.sutd.bank.webapp.service.ClientAccountDAO;
 import sg.edu.sutd.bank.webapp.service.ClientAccountDAOImpl;
@@ -52,6 +54,8 @@ import sg.edu.sutd.bank.webapp.service.ClientTransactionDAO;
 import sg.edu.sutd.bank.webapp.service.ClientTransactionDAOImpl;
 import sg.edu.sutd.bank.webapp.service.TransactionCodesDAO;
 import sg.edu.sutd.bank.webapp.service.TransactionCodesDAOImp;
+import sg.edu.sutd.bank.webapp.service.UserDAO;
+import sg.edu.sutd.bank.webapp.service.UserDAOImpl;
 
 @MultipartConfig
 @WebServlet(NEW_TRANSACTION)
@@ -63,6 +67,7 @@ public class NewTransactionServlet extends DefaultServlet {
 	private ClientInfoDAO clientInfoDAO = new ClientInfoDAOImpl();
 	private TransactionCodesDAO transCodeDAO = new TransactionCodesDAOImp();
 	private ClientAccountDAO clientAcctDAO = new ClientAccountDAOImpl();
+	private UserDAO userDAO = new UserDAOImpl();
 
 	@Override
 	protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -86,6 +91,22 @@ public class NewTransactionServlet extends DefaultServlet {
 				clientTransactionDAO.create(clientTransaction);
 				//set transaction code status to 1 (1 = used, 0 = unused)
 				transCodeDAO.update(req.getParameter("transcode"), 1);
+				
+				BigDecimal transAmt = new BigDecimal(req.getParameter("amount"));
+				//if transaction amount < 10.0 auto approve and transfer
+				if(transAmt.compareTo(new BigDecimal(10.0)) < 0)
+				{
+					ClientTransaction trans = clientTransactionDAO.load(req.getParameter("transcode"));
+					trans.setStatus(TransactionStatus.APPROVED);
+					List<ClientTransaction> transactions = new ArrayList<ClientTransaction>();
+					transactions.add(trans);
+					clientTransactionDAO.updateDecision(transactions); 
+					User receiver = userDAO.loadUser(req.getParameter("toAccountNum"));
+					clientAcctDAO.transferAmount(clientTransaction, receiver);		
+				}
+				
+				
+				
 				redirect(resp, ServletPaths.CLIENT_DASHBOARD_PAGE);
 			}
 		} catch (ServiceException e) {

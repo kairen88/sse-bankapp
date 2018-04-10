@@ -30,6 +30,8 @@ public interface ClientTransactionDAO {
 	
 	ClientTransaction load(int transId) throws ServiceException;
 	
+	ClientTransaction load(String transCode) throws ServiceException;
+	
 	List<ClientTransaction> loadWaitingList() throws ServiceException;
 
 	void updateDecision(List<ClientTransaction> transactions) throws ServiceException;

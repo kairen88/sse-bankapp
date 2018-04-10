@@ -15,6 +15,7 @@ https://opensource.org/licenses/ECL-2.0
 
 package sg.edu.sutd.bank.webapp.service;
 
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -92,6 +93,26 @@ public class ClientAccountDAOImpl extends AbstractDAOImpl implements ClientAccou
 		}
 	}
 	
-	
+	@Override
+	public void transferAmount(ClientTransaction clientTrans, User receiver) throws ServiceException {
+		
+		//THIS NEEDS TO HAVE A LOCK
+		
+		//get sender account info
+		ClientAccount senderAcct = load(clientTrans.getUser().getId());
+		//debit sender account
+		BigDecimal senderAmt = senderAcct.getAmount();
+		senderAmt = senderAmt.subtract(clientTrans.getAmount());
+		senderAcct.setAmount(senderAmt);
+		update(senderAcct);
+		
+		//get receiver account info						
+		ClientAccount recAcct = load(receiver.getId());
+		//credit receiver account
+		BigDecimal recAmt = recAcct.getAmount();
+		recAmt = recAmt.add(clientTrans.getAmount());
+		recAcct.setAmount(recAmt);
+		update(recAcct); //update should be synchronized?
+	}
 
 }
