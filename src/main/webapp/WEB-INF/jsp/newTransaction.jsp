@@ -10,6 +10,17 @@
 	<main id="content" class="mainContent sutd-template" role="main">
 	<div class="container">
 		<%@include file="errorMessage.jsp"%>
+		
+		<div id="createBatchTransaction">
+			<form id="batchTransactionForm" action="newTransaction" method="post" enctype = "multipart/form-data">
+				<input type = "file" name = "file" size = "50" id="file"/>
+				</br>
+				<button id="createBatchTransBtn" type="submit" class="btn btn-default">Upload File</button>
+				<input type="hidden" name="actionType" value="batchTransactionAction">
+			</form>
+		</div>
+		
+		
 		<div id="createTransaction">
 			<form id="newTransactionForm" action="newTransaction" method="post">
 				<div id="input-group-transcode" class="form-group">
@@ -25,6 +36,7 @@
 					<input type="text" class="form-control" id="amount" name="amount" placeholder="amount">
 				</div>
 				<button id="createTransBtn" type="submit" class="btn btn-default">Submit</button>
+				<input type="hidden" name="actionType" value="newTransactionAction">
 			</form>
 		</div>
 	</div>

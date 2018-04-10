@@ -191,8 +191,8 @@ public class StaffDashboardServlet extends DefaultServlet {
 						recAcct.setAmount(recAmt);
 						clientAccountDAO.update(recAcct); //update should be synchronized?
 						
-						//set transaction code status to 1 (1 = used, 0 = unused)
-						transactionCodesDAO.update(clientTrans.getTransCode(), 1);
+//						//set transaction code status to 1 (1 = used, 0 = unused)
+//						transactionCodesDAO.update(clientTrans.getTransCode(), 1);
 						
 						//clientTransactionDAO.initiateTransaction(transactions); //HOW TO SYNC OR LOCK HERE?
 					}

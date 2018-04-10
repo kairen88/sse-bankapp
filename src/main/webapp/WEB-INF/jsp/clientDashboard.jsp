@@ -45,6 +45,11 @@
 				<button id="createTransBtn" type="submit" class="btn btn-default">New Transaction</button>
 			</form>
 		</div>
+		<div id="createBatchTransaction" style="padding-top: 50px">
+			<form id="registrationForm" action="batchTransaction" method="get">
+				<button id="createBatchTransBtn" type="submit" class="btn btn-default">Batch Transaction</button>
+			</form>
+		</div>
 	</div>
 	</main>
   </body>

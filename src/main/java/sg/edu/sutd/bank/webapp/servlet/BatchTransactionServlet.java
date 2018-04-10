@@ -15,7 +15,7 @@ https://opensource.org/licenses/ECL-2.0
 
 package sg.edu.sutd.bank.webapp.servlet;
 
-import static sg.edu.sutd.bank.webapp.servlet.ServletPaths.NEW_TRANSACTION;
+import static sg.edu.sutd.bank.webapp.servlet.ServletPaths.BATCH_TRANSACTION;
 import static sg.edu.sutd.bank.webapp.servlet.ServletPaths.STAFF_DASHBOARD_PAGE;
 
 import java.io.BufferedReader;
@@ -54,8 +54,8 @@ import sg.edu.sutd.bank.webapp.service.TransactionCodesDAO;
 import sg.edu.sutd.bank.webapp.service.TransactionCodesDAOImp;
 
 @MultipartConfig
-@WebServlet(NEW_TRANSACTION)
-public class NewTransactionServlet extends DefaultServlet {
+@WebServlet(BATCH_TRANSACTION)
+public class BatchTransactionServlet extends DefaultServlet {
 	private static final long serialVersionUID = 1L;
 	public static final String BATCH_TRANSACTION_ACTION = "batchTransactionAction";
 	public static final String NEW_TRANSACTION_ACTION = "newTransactionAction";
@@ -67,31 +67,125 @@ public class NewTransactionServlet extends DefaultServlet {
 	@Override
 	protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 		String actionType = req.getParameter("actionType");
-		if (NEW_TRANSACTION_ACTION.endsWith(actionType)) {
-			newTransaction(req, resp);
-		} 
+		if (BATCH_TRANSACTION_ACTION.endsWith(actionType)) {
+			batchTransaction(req, resp);
+		}
 	}
 
-	private void newTransaction(HttpServletRequest req, HttpServletResponse resp) throws IOException, ServletException {
-		try {
-			ClientTransaction clientTransaction = new ClientTransaction();
-			User user = new User(getUserId(req));
-			clientTransaction.setUser(user);
-			clientTransaction.setAmount(new BigDecimal(req.getParameter("amount")));
-			clientTransaction.setTransCode(req.getParameter("transcode"));
-			clientTransaction.setToAccountNum(req.getParameter("toAccountNum"));
+	private void batchTransaction(HttpServletRequest req, HttpServletResponse resp)
+			throws IOException, ServletException {
 
-			// check if transaction is valid
-			if (isTransValid(clientTransaction)) {
-				clientTransactionDAO.create(clientTransaction);
-				//set transaction code status to 1 (1 = used, 0 = unused)
-				transCodeDAO.update(req.getParameter("transcode"), 1);
-				redirect(resp, ServletPaths.CLIENT_DASHBOARD_PAGE);
+		// Verify the content type
+		String contentType = req.getContentType();
+		if ((contentType.indexOf("multipart/form-data") >= 0)) {
+			String path = "D:\\tmp";
+			File uploadFile = uploadFile(req, path);
+
+			ArrayList<String[]> batchTransactions = loadBatchFile(uploadFile);
+
+			// submit transactions
+			if (batchTransactions.isEmpty()) {
+				sendError(req, "Batch file is empty");
 			}
-		} catch (ServiceException e) {
-			sendError(req, e.getMessage());
-			forward(req, resp);
+			try {
+				User user = new User(getUserId(req));
+				// validate batch transaction
+				Double totalAmount = 0.0;
+				for (String[] transDetails : batchTransactions)
+					totalAmount += Double.valueOf(transDetails[1]);
+
+				BigDecimal batchTotalAmt = new BigDecimal(totalAmount);
+				if (batchTotalAmt.compareTo(clientAcctDAO.load(user.getId()).getAmount()) > 0) {
+					throw new ServiceException(
+							new Throwable("Total amount transferred is more than current account balance"));
+				}
+				// create the transaction
+				for (String[] transDetails : batchTransactions) {
+
+					ClientTransaction clientTransaction = new ClientTransaction();
+					clientTransaction.setUser(user);
+					clientTransaction.setTransCode(transDetails[0]);
+					clientTransaction.setAmount(new BigDecimal(Double.valueOf(transDetails[1])));
+					clientTransaction.setToAccountNum(transDetails[2]);
+
+					if (isTransValid(clientTransaction)) {
+						clientTransactionDAO.create(clientTransaction);
+						// set transaction code status to 1 (1 = used, 0 = unused)
+						transCodeDAO.update(transDetails[0], 1);
+					}
+				}
+			} catch (ServiceException e) {
+				sendError(req, e.getMessage());
+				forward(req, resp);
+			}
+			redirect(resp, ServletPaths.CLIENT_DASHBOARD_PAGE);
 		}
+	}
+
+	private File uploadFile(HttpServletRequest req, String path) throws IOException, ServletException {
+		final Part filePart = req.getPart("file");
+		String fileName = null;
+		// get filename
+		for (String content : filePart.getHeader("content-disposition").split(";")) {
+			if (content.trim().startsWith("filename")) {
+				fileName = content.substring(content.indexOf('=') + 1).trim().replace("\"", "");
+			}
+		}
+		OutputStream out = null;
+		InputStream filecontent = null;
+		File uploadFile = null;
+
+		try {
+			// upload file
+			uploadFile = new File(path + File.separator + fileName);
+			out = new FileOutputStream(uploadFile);
+			filecontent = filePart.getInputStream();
+
+			int read = 0;
+			final byte[] bytes = new byte[1024];
+
+			while ((read = filecontent.read(bytes)) != -1) {
+				out.write(bytes, 0, read);
+			}
+		} catch (FileNotFoundException fne) {
+			System.out.println("FILE NOT FOUND");
+		} finally {
+			if (out != null) {
+				out.close();
+			}
+			if (filecontent != null) {
+				filecontent.close();
+			}
+		}
+		return uploadFile;
+	}
+
+	private ArrayList<String[]> loadBatchFile(File uploadFile) throws IOException, FileNotFoundException {
+		String contentType;
+		ArrayList<String[]> batchTransactions = new ArrayList<String[]>();
+		if (uploadFile != null) {
+			// load the csv file
+			Path filePath = uploadFile.toPath();
+			contentType = Files.probeContentType(filePath);
+			if ("text/csv".equals(contentType) || "text/plain".equals(contentType)) {
+				BufferedReader br = new BufferedReader(new FileReader(uploadFile));
+				String line = "";
+
+				while ((line = br.readLine()) != null) {
+					String[] transInputAry = line.split(",");
+					String transCode = sanitizeInputStr(transInputAry[0]);
+					String amount = sanitizeInputStr(transInputAry[1]);
+					String recpiantId = sanitizeInputStr(transInputAry[2]);
+
+					batchTransactions.add(new String[] { transCode, amount, recpiantId });
+				}
+			}
+		}
+		return batchTransactions;
+	}
+
+	private String sanitizeInputStr(String inputString) {
+		return inputString.trim();
 	}
 
 	private boolean isTransValid(ClientTransaction clientTrans) throws ServiceException {
