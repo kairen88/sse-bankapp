@@ -15,11 +15,15 @@ https://opensource.org/licenses/ECL-2.0
 
 package sg.edu.sutd.bank.webapp.model;
 
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 
 public class User extends AbstractIdEntity {
 	private String userName;
 	private String password;
 	private UserStatus status;
+	private String salt;
 
 	public User() {
 	}
@@ -51,6 +55,14 @@ public class User extends AbstractIdEntity {
 	public void setStatus(UserStatus status) {
 		this.status = status;
 	}
+	
+	public void setSalt(String salt) {
+		this.salt = salt;
+	}
+	
+	public String getSalt() {
+		return salt;
+	}
 
 	public void setStatus(String str) {
 		UserStatus status = null;
@@ -59,5 +71,39 @@ public class User extends AbstractIdEntity {
 		}
 		setStatus(status);
 	}
-	
+
+	public String hashPassword(String passwordToHash, String salt) {
+		String generatedPassword = null;
+		if(salt==null)
+			return null;
+		try {
+			MessageDigest md = MessageDigest.getInstance("SHA-256");
+			md.update(salt.getBytes());
+			byte[] bytes = md.digest(passwordToHash.getBytes());
+			StringBuilder sb = new StringBuilder();
+			for (int i = 0; i < bytes.length; i++) {
+				sb.append(Integer.toString((bytes[i] & 0xff) + 0x100, 16).substring(1));
+			}
+			generatedPassword = sb.toString();
+		} catch (NoSuchAlgorithmException e) {
+			e.printStackTrace();
+		}
+		return generatedPassword;
+	}
+
+	public String generateSalt() 
+    {
+		byte[] salt = null;
+		try {
+        SecureRandom sr;
+		sr = SecureRandom.getInstance("SHA1PRNG");
+        salt = new byte[16];
+        sr.nextBytes(salt);
+        } catch (NoSuchAlgorithmException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return salt.toString();
+    }
+
 }

@@ -32,7 +32,7 @@ public class UserDAOImpl extends AbstractDAOImpl implements UserDAO {
 		PreparedStatement ps = null;
 		ResultSet rs = null;
 		try {
-			ps = conn.prepareStatement("SELECT id, user_name, status FROM USER WHERE user_name=?");
+			ps = conn.prepareStatement("SELECT id, user_name, status, salt FROM USER WHERE user_name=?");
 			ps.setString(1, userName);
 			rs = ps.executeQuery();
 			if (rs.next()) {
@@ -40,6 +40,7 @@ public class UserDAOImpl extends AbstractDAOImpl implements UserDAO {
 				user.setId(rs.getInt("id"));
 				user.setUserName(rs.getString("user_name"));
 				user.setStatus(rs.getString("status"));
+				user.setSalt(rs.getString("salt"));
 				return user;
 			}
 		} catch (SQLException e) {
@@ -56,10 +57,11 @@ public class UserDAOImpl extends AbstractDAOImpl implements UserDAO {
 		PreparedStatement ps = null;
 		ResultSet rs = null;
 		try {
-			ps = prepareStmt(conn, "INSERT INTO USER(user_name, password) VALUES(?,?)");
+			ps = prepareStmt(conn, "INSERT INTO USER(user_name, password, salt) VALUES(?,?,?)");
 			int idx = 1;
 			ps.setString(idx++, user.getUserName());
 			ps.setString(idx++, user.getPassword());
+			ps.setString(idx++, user.getSalt());
 			executeInsert(user, ps);
 		} catch (SQLException e) {
 			throw ServiceException.wrap(e);

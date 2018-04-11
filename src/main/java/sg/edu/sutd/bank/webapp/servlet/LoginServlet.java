@@ -41,7 +41,11 @@ public class LoginServlet extends DefaultServlet {
 			String userName = req.getParameter("username");
 			User user = userDAO.loadUser(userName);
 			if (user != null && (user.getStatus() == UserStatus.APPROVED)) {
-				req.login(userName, req.getParameter("password"));
+				//hash password with salt
+				String pwdHash = user.hashPassword(req.getParameter("password"), user.getSalt());
+				if(pwdHash==null)
+					sendError(req, "Invalid username/password!");
+				req.login(userName, pwdHash);
 				HttpSession session = req.getSession(true);
 				session.setAttribute("authenticatedUser", req.getRemoteUser());
 				setUserId(req, user.getId());
