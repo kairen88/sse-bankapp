@@ -96,14 +96,14 @@ public class NewTransactionServlet extends DefaultServlet {
 				BigDecimal transAmt = new BigDecimal(req.getParameter("amount"));
 				//if transaction amount < 10.0 auto approve and transfer
 				if(transAmt.compareTo(new BigDecimal(10.0)) < 0)
-				{
+				{	
 					ClientTransaction trans = clientTransactionDAO.load(req.getParameter("transcode"));
 					trans.setStatus(TransactionStatus.APPROVED);
 					List<ClientTransaction> transactions = new ArrayList<ClientTransaction>();
 					transactions.add(trans);
 					clientTransactionDAO.updateDecision(transactions); 
 					User receiver = userDAO.loadUser(req.getParameter("toAccountNum"));
-					clientAcctDAO.transferAmount(clientTransaction, receiver);		
+					clientAcctDAO.transferAmount(clientTransaction, receiver);					
 				}
 				
 				
