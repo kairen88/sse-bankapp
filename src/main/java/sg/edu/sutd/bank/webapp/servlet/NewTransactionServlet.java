@@ -42,6 +42,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.Part;
 
 import sg.edu.sutd.bank.webapp.commons.ServiceException;
+import sg.edu.sutd.bank.webapp.commons.StringUtils;
 import sg.edu.sutd.bank.webapp.model.ClientInfo;
 import sg.edu.sutd.bank.webapp.model.ClientTransaction;
 import sg.edu.sutd.bank.webapp.model.TransactionStatus;
@@ -84,7 +85,7 @@ public class NewTransactionServlet extends DefaultServlet {
 			clientTransaction.setUser(user);
 			clientTransaction.setAmount(new BigDecimal(req.getParameter("amount")));
 			clientTransaction.setTransCode(req.getParameter("transcode"));
-			clientTransaction.setToAccountNum(req.getParameter("toAccountNum"));
+			clientTransaction.setToAccountNum(StringUtils.sanitizeString(req.getParameter("toAccountNum")));
 
 			// check if transaction is valid
 			if (isTransValid(clientTransaction)) {

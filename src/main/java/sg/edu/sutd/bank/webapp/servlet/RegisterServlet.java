@@ -24,6 +24,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import sg.edu.sutd.bank.webapp.commons.ServiceException;
+import sg.edu.sutd.bank.webapp.commons.StringUtils;
 import sg.edu.sutd.bank.webapp.model.ClientInfo;
 import sg.edu.sutd.bank.webapp.model.Role;
 import sg.edu.sutd.bank.webapp.model.User;
@@ -50,25 +51,25 @@ public class RegisterServlet extends DefaultServlet {
 
 	public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		response.setContentType("text/html");
-		User user = new User();
-		user.setUserName(request.getParameter("username"));
-		String salt = user.generateSalt();
-		user.setSalt(salt);
-		String pwdHash = user.hashPassword(request.getParameter("password"), salt);
-		user.setPassword(pwdHash);
-
-		ClientInfo clientAccount = new ClientInfo();
-		clientAccount.setFullName(request.getParameter("fullName"));
-		clientAccount.setFin(request.getParameter("fin"));
-		clientAccount.setDateOfBirth(Date.valueOf(request.getParameter("dateOfBirth")));
-		clientAccount.setOccupation(request.getParameter("occupation"));
-		clientAccount.setMobileNumber(request.getParameter("mobileNumber"));
-		clientAccount.setAddress(request.getParameter("address"));
-		clientAccount.setEmail(request.getParameter("email"));
-		clientAccount.setUser(user);
-		//need to set salt in user and write to DB
-		
 		try {
+			User user = new User();
+			user.setUserName(StringUtils.sanitizeString(request.getParameter("username")));
+			String salt = user.generateSalt();
+			user.setSalt(salt);
+			String pwdHash = user.hashPassword(request.getParameter("password"), salt);
+			user.setPassword(pwdHash);
+	
+			ClientInfo clientAccount = new ClientInfo();
+			clientAccount.setFullName(StringUtils.sanitizeString(request.getParameter("fullName")));
+			clientAccount.setFin(StringUtils.sanitizeString(request.getParameter("fin")));
+			clientAccount.setDateOfBirth(Date.valueOf(request.getParameter("dateOfBirth")));
+			clientAccount.setOccupation(StringUtils.sanitizeString(request.getParameter("occupation")));
+			clientAccount.setMobileNumber(StringUtils.sanitizeString(request.getParameter("mobileNumber")));
+			clientAccount.setAddress(StringUtils.sanitizeString(request.getParameter("address")));
+			clientAccount.setEmail(StringUtils.sanitizeString(request.getParameter("email")));
+			clientAccount.setUser(user);
+		
+		
 			userDAO.create(user);
 			clientAccountDAO.create(clientAccount);
 			UserRole userRole = new UserRole();

@@ -23,7 +23,10 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import org.evosuite.shaded.org.hsqldb.lib.StringUtil;
+
 import sg.edu.sutd.bank.webapp.commons.ServiceException;
+import sg.edu.sutd.bank.webapp.commons.StringUtils;
 import sg.edu.sutd.bank.webapp.model.User;
 import sg.edu.sutd.bank.webapp.model.UserStatus;
 import sg.edu.sutd.bank.webapp.service.UserDAO;
@@ -38,7 +41,7 @@ public class LoginServlet extends DefaultServlet {
 	@Override
 	protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 		try {
-			String userName = req.getParameter("username");
+			String userName = StringUtils.sanitizeString(req.getParameter("username"));
 			User user = userDAO.loadUser(userName);
 			if (user != null && (user.getStatus() == UserStatus.APPROVED)) {
 				//hash password with salt

@@ -42,6 +42,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.Part;
 
 import sg.edu.sutd.bank.webapp.commons.ServiceException;
+import sg.edu.sutd.bank.webapp.commons.StringUtils;
 import sg.edu.sutd.bank.webapp.model.ClientInfo;
 import sg.edu.sutd.bank.webapp.model.ClientTransaction;
 import sg.edu.sutd.bank.webapp.model.TransactionStatus;
@@ -85,14 +86,15 @@ public class BatchTransactionServlet extends DefaultServlet {
 		if ((contentType.indexOf("multipart/form-data") >= 0)) {
 			String path = "D:\\tmp";
 			File uploadFile = uploadFile(req, path);
-
-			ArrayList<String[]> batchTransactions = loadBatchFile(uploadFile);
-
-			// submit transactions
-			if (batchTransactions.isEmpty()) {
-				sendError(req, "Batch file is empty");
-			}
+			
 			try {
+				ArrayList<String[]> batchTransactions = loadBatchFile(uploadFile);
+	
+				// submit transactions
+				if (batchTransactions.isEmpty()) {
+					sendError(req, "Batch file is empty");
+				}
+			
 				User user = new User(getUserId(req));
 				// validate batch transaction
 				Double totalAmount = 0.0;
@@ -179,7 +181,7 @@ public class BatchTransactionServlet extends DefaultServlet {
 		return uploadFile;
 	}
 
-	private ArrayList<String[]> loadBatchFile(File uploadFile) throws IOException, FileNotFoundException {
+	private ArrayList<String[]> loadBatchFile(File uploadFile) throws IOException, FileNotFoundException, ServiceException {
 		String contentType;
 		ArrayList<String[]> batchTransactions = new ArrayList<String[]>();
 		if (uploadFile != null) {
@@ -194,7 +196,7 @@ public class BatchTransactionServlet extends DefaultServlet {
 					String[] transInputAry = line.split(",");
 					String transCode = sanitizeInputStr(transInputAry[0]);
 					String amount = sanitizeInputStr(transInputAry[1]);
-					String recpiantId = sanitizeInputStr(transInputAry[2]);
+					String recpiantId = sanitizeInputStr(StringUtils.sanitizeString(transInputAry[2]));
 
 					batchTransactions.add(new String[] { transCode, amount, recpiantId });
 				}

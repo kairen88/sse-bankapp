@@ -15,7 +15,11 @@ https://opensource.org/licenses/ECL-2.0
 
 package sg.edu.sutd.bank.webapp.commons;
 
+import java.text.Normalizer;
+import java.text.Normalizer.Form;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class StringUtils {
 	private StringUtils() {}
@@ -32,5 +36,17 @@ public class StringUtils {
 			}
 		}
 		return sb.toString();
+	}
+	
+	public static String sanitizeString(String str) throws ServiceException {
+		str = Normalizer.normalize(str, Form.NFKC);
+		str = str.replace("^\\p{ASCII}]", "");
+		Pattern pattern = Pattern.compile("<script>");
+		Matcher matcher = pattern.matcher(str);
+		if(matcher.find())
+		{
+			throw new ServiceException(new Throwable("Invalid input detected"));
+		}
+		return str;
 	}
 }
