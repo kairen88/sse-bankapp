@@ -52,7 +52,11 @@ public class UserDAOImpl extends AbstractDAOImpl implements UserDAO {
 	}
 
 	@Override
-	public void create(User user) throws ServiceException {
+	public synchronized void create(User user) throws ServiceException {
+		//if the user name exists, return
+		User usr = loadUser(user.getUserName());
+		if(usr != null)
+			return;
 		Connection conn = connectDB();
 		PreparedStatement ps = null;
 		ResultSet rs = null;
