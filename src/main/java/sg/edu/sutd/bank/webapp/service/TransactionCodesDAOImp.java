@@ -31,7 +31,7 @@ public class TransactionCodesDAOImp extends AbstractDAOImpl implements Transacti
 	@Override
 	public void create(List<String> codes, int userId) throws ServiceException {
 		Connection conn = connectDB();
-		PreparedStatement ps;
+		PreparedStatement ps=null;
 		try {
 			StringBuilder query = new StringBuilder();
 			query.append("INSERT INTO transaction_code(code, user_id, used)"
@@ -55,6 +55,14 @@ public class TransactionCodesDAOImp extends AbstractDAOImpl implements Transacti
 			}
 		} catch (SQLException e) {
 			throw ServiceException.wrap(e);
+		}finally {
+			try {
+				conn.close();
+				ps.close();
+			} catch (SQLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 	}
 	
@@ -108,8 +116,9 @@ public class TransactionCodesDAOImp extends AbstractDAOImpl implements Transacti
 	@Override
 	public void update(String code, int status) throws ServiceException {
 		Connection conn = connectDB();
+		PreparedStatement ps = null;
 		try {
-			PreparedStatement ps = conn.prepareStatement("UPDATE transaction_code SET used = ? WHERE code = ?");
+			ps = conn.prepareStatement("UPDATE transaction_code SET used = ? WHERE code = ?");
 			ps.setInt(1, status);
 			ps.setString(2, code);		
 		
@@ -119,6 +128,13 @@ public class TransactionCodesDAOImp extends AbstractDAOImpl implements Transacti
 			}
 		} catch (SQLException e) {
 			throw ServiceException.wrap(e);
+		}finally {
+			try {
+				ps.close();
+				conn.close();
+				} catch (SQLException e) {
+				e.printStackTrace();
+			}
 		}
 	}
 

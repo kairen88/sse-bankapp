@@ -33,7 +33,7 @@ public class ClientTransactionDAOImpl extends AbstractDAOImpl implements ClientT
 	@Override
 	public void create(ClientTransaction clientTransaction) throws ServiceException {
 		Connection conn = connectDB();
-		PreparedStatement ps;
+		PreparedStatement ps = null;
 		try {
 			ps = prepareStmt(conn, "INSERT INTO client_transaction(trans_code, amount, to_account_num, user_id)"
 					+ " VALUES(?,?,?,?)");
@@ -45,6 +45,14 @@ public class ClientTransactionDAOImpl extends AbstractDAOImpl implements ClientT
 			executeInsert(clientTransaction, ps);
 		} catch (SQLException e) {
 			throw ServiceException.wrap(e);
+		}finally {
+			try {
+				ps.close();
+				conn.close();
+			} catch (SQLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 	}
 

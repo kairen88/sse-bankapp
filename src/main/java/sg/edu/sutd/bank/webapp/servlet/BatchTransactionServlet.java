@@ -181,24 +181,34 @@ public class BatchTransactionServlet extends DefaultServlet {
 		return uploadFile;
 	}
 
-	private ArrayList<String[]> loadBatchFile(File uploadFile) throws IOException, FileNotFoundException, ServiceException {
+	private ArrayList<String[]> loadBatchFile(File uploadFile) throws ServiceException {
 		String contentType;
 		ArrayList<String[]> batchTransactions = new ArrayList<String[]>();
 		if (uploadFile != null) {
 			// load the csv file
 			Path filePath = uploadFile.toPath();
-			contentType = Files.probeContentType(filePath);
-			if ("text/csv".equals(contentType) || "text/plain".equals(contentType)) {
-				BufferedReader br = new BufferedReader(new FileReader(uploadFile));
-				String line = "";
-
-				while ((line = br.readLine()) != null) {
-					String[] transInputAry = line.split(",");
-					String transCode = sanitizeInputStr(transInputAry[0]);
-					String amount = sanitizeInputStr(transInputAry[1]);
-					String recpiantId = sanitizeInputStr(StringUtils.sanitizeString(transInputAry[2]));
-
-					batchTransactions.add(new String[] { transCode, amount, recpiantId });
+			BufferedReader br = null;
+			try {
+				contentType = Files.probeContentType(filePath);
+				if ("text/csv".equals(contentType) || "text/plain".equals(contentType)) {
+					br = new BufferedReader(new FileReader(uploadFile));
+					String line = "";
+	
+					while ((line = br.readLine()) != null) {
+						String[] transInputAry = line.split(",");
+						String transCode = sanitizeInputStr(transInputAry[0]);
+						String amount = sanitizeInputStr(transInputAry[1]);
+						String recpiantId = sanitizeInputStr(StringUtils.sanitizeString(transInputAry[2]));
+	
+						batchTransactions.add(new String[] { transCode, amount, recpiantId });
+				}
+			}
+			}catch (Exception e) {
+				// TODO: handle exception
+				e.printStackTrace();
+			}finally {
+				try {br.close();} catch (IOException e) {
+					e.printStackTrace();
 				}
 			}
 		}
