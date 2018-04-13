@@ -47,6 +47,7 @@ import sg.edu.sutd.bank.webapp.model.ClientInfo;
 import sg.edu.sutd.bank.webapp.model.ClientTransaction;
 import sg.edu.sutd.bank.webapp.model.TransactionStatus;
 import sg.edu.sutd.bank.webapp.model.User;
+import sg.edu.sutd.bank.webapp.model.UserStatus;
 import sg.edu.sutd.bank.webapp.service.ClientAccountDAO;
 import sg.edu.sutd.bank.webapp.service.ClientAccountDAOImpl;
 import sg.edu.sutd.bank.webapp.service.ClientInfoDAO;
@@ -237,6 +238,11 @@ public class BatchTransactionServlet extends DefaultServlet {
 		ClientInfo clientInfo = clientInfoDAO.loadAccountInfo(clientTrans.getToAccountNum());
 		if (clientTrans.getUser().getId() == clientInfo.getUser().getId()) {
 			throw new ServiceException(new Throwable("Transfer must be made to a different account"));
+		}
+		//receiver account is approved 
+		User receiverUsr = userDAO.loadUser(clientTrans.getToAccountNum());
+		if(receiverUsr.getStatus().compareTo(UserStatus.APPROVED) != 0) {
+			throw new ServiceException(new Throwable("User account is not approved"));
 		}
 		// transfer Code is valid and has not been used and it belongs to the user
 		if (transCodeDAO.loadStatus(clientTrans.getTransCode()) != 0
