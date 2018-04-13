@@ -28,5 +28,7 @@ public interface ClientInfoDAO {
 	List<ClientInfo> loadWaitingList() throws ServiceException;
 
 	ClientInfo loadAccountInfo(String userName) throws ServiceException;
+	
+	boolean emailExists(String email) throws ServiceException;
 
 }

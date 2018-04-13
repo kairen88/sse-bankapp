@@ -135,5 +135,30 @@ public class ClientInfoDAOImpl extends AbstractDAOImpl implements ClientInfoDAO 
 		return clientInfo;
 	}
 	
-	
+	@Override
+	public boolean emailExists(String email) throws ServiceException {
+		Connection conn = connectDB();
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+		int count = 0;
+		try {
+			ps = conn.prepareStatement(
+					"SELECT COUNT(email) as total FROM client_info WHERE email=?");
+			int idx = 1;
+			ps.setString(idx ++, email);
+			rs = ps.executeQuery();
+			if (rs.next()) {
+				count = rs.getInt("total");
+				
+			} else {
+				throw new SQLException("No data found for email " + email);
+			}
+		} catch (SQLException e) {
+			throw ServiceException.wrap(e);
+		} finally {
+			closeDb(conn, ps, rs);
+		}
+
+		return count > 0? true : false;
+	}
 }

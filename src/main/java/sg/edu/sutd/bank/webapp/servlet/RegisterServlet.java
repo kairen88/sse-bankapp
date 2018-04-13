@@ -47,6 +47,7 @@ public class RegisterServlet extends DefaultServlet {
 	private ClientInfoDAO clientAccountDAO = new ClientInfoDAOImpl();
 	private UserDAO userDAO = new UserDAOImpl();
 	private UserRoleDAO userRoleDAO = new UserRoleDAOImpl();
+	private ClientInfoDAO clientInfoDAO = new ClientInfoDAOImpl();
 	private EmailService emailService = new EmailServiceImp();
 
 	public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -68,7 +69,9 @@ public class RegisterServlet extends DefaultServlet {
 			clientAccount.setAddress(StringUtils.sanitizeString(request.getParameter("address")));
 			clientAccount.setEmail(StringUtils.sanitizeString(request.getParameter("email")));
 			clientAccount.setUser(user);
-		
+			
+			if(!accountDetailsValid(clientAccount))
+				throw new ServiceException(new Throwable("User name or email is invalid"));
 		
 			userDAO.create(user);
 			clientAccountDAO.create(clientAccount);
@@ -83,5 +86,13 @@ public class RegisterServlet extends DefaultServlet {
 			sendError(request, e.getMessage());
 			forward(request, response);
 		}
+	}
+
+	private boolean accountDetailsValid(ClientInfo clientAccount) throws ServiceException {
+		if(clientInfoDAO.emailExists(clientAccount.getEmail()) ||
+				userDAO.loadUser(clientAccount.getUser().getUserName()) != null)
+			return false;
+		
+		return true;
 	}
 }
