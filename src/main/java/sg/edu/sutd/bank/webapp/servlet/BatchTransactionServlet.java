@@ -125,12 +125,21 @@ public class BatchTransactionServlet extends DefaultServlet {
 						if(transAmt.compareTo(new BigDecimal(10.0)) < 0)
 						{
 							ClientTransaction trans = clientTransactionDAO.load(transDetails[0]);
-							trans.setStatus(TransactionStatus.APPROVED);
-							List<ClientTransaction> transactions = new ArrayList<ClientTransaction>();
-							transactions.add(trans);
-							clientTransactionDAO.updateDecision(transactions); 
-							User receiver = userDAO.loadUser(transDetails[2]);
-							clientAcctDAO.transferAmount(clientTransaction, receiver);		
+							if(trans != null)
+							{
+								trans.setStatus(TransactionStatus.APPROVED);
+								List<ClientTransaction> transactions = new ArrayList<ClientTransaction>();
+								transactions.add(trans);
+								clientTransactionDAO.updateDecision(transactions); 
+								User receiver = userDAO.loadUser(transDetails[2]);
+								if(receiver != null)
+									clientAcctDAO.transferAmount(clientTransaction, receiver);		
+								else
+									throw new ServiceException(new Throwable("Receiver is invalid"));
+							}else
+							{
+								throw new ServiceException(new Throwable("Transaction code is invalid"));
+							}
 						}
 						
 					}

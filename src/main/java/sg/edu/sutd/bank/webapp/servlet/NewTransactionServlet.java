@@ -98,12 +98,20 @@ public class NewTransactionServlet extends DefaultServlet {
 				if(transAmt.compareTo(new BigDecimal(10.0)) < 0)
 				{	
 					ClientTransaction trans = clientTransactionDAO.load(req.getParameter("transcode"));
-					trans.setStatus(TransactionStatus.APPROVED);
-					List<ClientTransaction> transactions = new ArrayList<ClientTransaction>();
-					transactions.add(trans);
-					clientTransactionDAO.updateDecision(transactions); 
-					User receiver = userDAO.loadUser(req.getParameter("toAccountNum"));
-					clientAcctDAO.transferAmount(clientTransaction, receiver);					
+					if(trans != null)
+					{
+						trans.setStatus(TransactionStatus.APPROVED);
+						List<ClientTransaction> transactions = new ArrayList<ClientTransaction>();
+						transactions.add(trans);
+						clientTransactionDAO.updateDecision(transactions); 
+						User receiver = userDAO.loadUser(req.getParameter("toAccountNum"));
+						if(receiver != null)
+							clientAcctDAO.transferAmount(clientTransaction, receiver);
+						else
+							throw new ServiceException(new Throwable("Recceiver is invalid"));
+					}else {
+						throw new ServiceException(new Throwable("Transaction code is invalid"));
+					}
 				}
 				
 				

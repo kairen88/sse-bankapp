@@ -74,7 +74,8 @@ public class DefaultServlet extends HttpServlet {
 	protected void forward(String path, HttpServletRequest req, HttpServletResponse resp)
 			throws ServletException, IOException {
 		RequestDispatcher view = req.getRequestDispatcher(getPath(path));
-		view.forward(req, resp);
+		if(view != null)
+			view.forward(req, resp);
 	}
 	
 	protected void redirect(HttpServletResponse resp, String templage) throws IOException {
