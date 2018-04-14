@@ -27,6 +27,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import sg.edu.sutd.bank.webapp.commons.Constants;
+import sg.edu.sutd.bank.webapp.commons.Locks;
 import sg.edu.sutd.bank.webapp.commons.ServiceException;
 import sg.edu.sutd.bank.webapp.commons.StringUtils;
 import sg.edu.sutd.bank.webapp.model.ClientAccount;
@@ -181,21 +182,23 @@ public class StaffDashboardServlet extends DefaultServlet {
 				
 				//account update logic should be here				
 				for(ClientTransaction trans: transactions)
-				{					
-					ClientTransaction clientTrans = clientTransactionDAO.load(trans.getId()); 
-					if(clientTrans != null) 
-					{
-						int codeStatus = transactionCodesDAO.loadStatus(clientTrans.getTransCode());
-						if(codeStatus == 0)
-						{			
-							User receiver = userDAO.loadUser(clientTrans.getToAccountNum());
-							if(receiver != null)
-								clientAccountDAO.transferAmount(clientTrans, receiver);						
-							else
-								throw new ServiceException(new Throwable("Receiver is invalid"));
+				{				
+					synchronized(Locks.transactionLock) {
+						ClientTransaction clientTrans = clientTransactionDAO.load(trans.getId()); 
+						if(clientTrans != null && clientTrans.getStatus().compareTo(TransactionStatus.APPROVED) == 0) 
+						{
+							int codeStatus = transactionCodesDAO.loadStatus(clientTrans.getTransCode());
+							if(codeStatus == 0)
+							{			
+								User receiver = userDAO.loadUser(clientTrans.getToAccountNum());
+								if(receiver != null)
+									clientAccountDAO.transferAmount(clientTrans, receiver);						
+								else
+									throw new ServiceException(new Throwable("Receiver is invalid"));
+							}
+						}else {
+							throw new ServiceException(new Throwable("Transaction is invalid"));
 						}
-					}else {
-						throw new ServiceException(new Throwable("Transaction code is invalid"));
 					}
 				}
 			} catch (ServiceException e) {

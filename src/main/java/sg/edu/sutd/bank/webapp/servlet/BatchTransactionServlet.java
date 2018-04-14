@@ -41,6 +41,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.Part;
 
+import sg.edu.sutd.bank.webapp.commons.Locks;
 import sg.edu.sutd.bank.webapp.commons.ServiceException;
 import sg.edu.sutd.bank.webapp.commons.StringUtils;
 import sg.edu.sutd.bank.webapp.model.ClientInfo;
@@ -75,22 +76,21 @@ public class BatchTransactionServlet extends DefaultServlet {
 	protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 		String sessionId = req.getRequestedSessionId();
 		String formValidationId = StringUtils.hashString(sessionId);
-		req.setAttribute("formValidationId",formValidationId);
+		req.setAttribute("formValidationId", formValidationId);
 		forward(req, resp);
 	}
-	
+
 	@Override
 	protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 		try {
-			//validate form submission for XSS request forgery
+			// validate form submission for XSS request forgery
 			String sessionId = req.getRequestedSessionId();
 			String sessionHash = StringUtils.hashString(sessionId);
 			String formValidationId = req.getParameter("formValidationId");
-			if(formValidationId.compareTo(sessionHash) != 0)
-				
-					throw new ServiceException(new Throwable("Request Invalid"));
-				
-			
+			if (formValidationId.compareTo(sessionHash) != 0)
+
+				throw new ServiceException(new Throwable("Request Invalid"));
+
 			String actionType = req.getParameter("actionType");
 			if (BATCH_TRANSACTION_ACTION.endsWith(actionType)) {
 				batchTransaction(req, resp);
@@ -108,15 +108,15 @@ public class BatchTransactionServlet extends DefaultServlet {
 		if ((contentType.indexOf("multipart/form-data") >= 0)) {
 			String path = "D:\\tmp";
 			File uploadFile = uploadFile(req, path);
-			
+
 			try {
 				ArrayList<String[]> batchTransactions = loadBatchFile(uploadFile);
-	
+
 				// submit transactions
 				if (batchTransactions.isEmpty()) {
 					sendError(req, "Batch file is empty");
 				}
-			
+
 				User user = new User(getUserId(req));
 				// validate batch transaction
 				Double totalAmount = 0.0;
@@ -142,28 +142,27 @@ public class BatchTransactionServlet extends DefaultServlet {
 						clientTransactionDAO.create(clientTransaction);
 						// set transaction code status to 1 (1 = used, 0 = unused)
 						transCodeDAO.update(transDetails[0], 1);
-						
-						//if transaction amount < 10.0 auto approve and transfer
-						if(transAmt.compareTo(new BigDecimal(10.0)) < 0)
-						{
-							ClientTransaction trans = clientTransactionDAO.load(transDetails[0]);
-							if(trans != null)
-							{
-								trans.setStatus(TransactionStatus.APPROVED);
-								List<ClientTransaction> transactions = new ArrayList<ClientTransaction>();
-								transactions.add(trans);
-								clientTransactionDAO.updateDecision(transactions); 
-								User receiver = userDAO.loadUser(transDetails[2]);
-								if(receiver != null)
-									clientAcctDAO.transferAmount(clientTransaction, receiver);		
-								else
-									throw new ServiceException(new Throwable("Receiver is invalid"));
-							}else
-							{
-								throw new ServiceException(new Throwable("Transaction code is invalid"));
+
+						// if transaction amount < 10.0 auto approve and transfer
+						if (transAmt.compareTo(new BigDecimal(10.0)) < 0) {
+							synchronized (Locks.transactionLock) {
+								ClientTransaction trans = clientTransactionDAO.load(transDetails[0]);
+								if (trans != null && trans.getStatus().compareTo(TransactionStatus.APPROVED) == 0) {
+									trans.setStatus(TransactionStatus.APPROVED);
+									List<ClientTransaction> transactions = new ArrayList<ClientTransaction>();
+									transactions.add(trans);
+									clientTransactionDAO.updateDecision(transactions);
+									User receiver = userDAO.loadUser(transDetails[2]);
+									if (receiver != null)
+										clientAcctDAO.transferAmount(clientTransaction, receiver);
+									else
+										throw new ServiceException(new Throwable("Receiver is invalid"));
+								} else {
+									throw new ServiceException(new Throwable("Transaction code is invalid"));
+								}
 							}
 						}
-						
+
 					}
 				}
 			} catch (ServiceException e) {
@@ -224,21 +223,23 @@ public class BatchTransactionServlet extends DefaultServlet {
 				if ("text/csv".equals(contentType) || "text/plain".equals(contentType)) {
 					br = new BufferedReader(new FileReader(uploadFile));
 					String line = "";
-	
+
 					while ((line = br.readLine()) != null) {
 						String[] transInputAry = line.split(",");
 						String transCode = sanitizeInputStr(transInputAry[0]);
 						String amount = sanitizeInputStr(transInputAry[1]);
 						String recpiantId = sanitizeInputStr(StringUtils.sanitizeString(transInputAry[2]));
-	
+
 						batchTransactions.add(new String[] { transCode, amount, recpiantId });
+					}
 				}
-			}
-			}catch (Exception e) {
+			} catch (Exception e) {
 				// TODO: handle exception
 				e.printStackTrace();
-			}finally {
-				try {br.close();} catch (IOException e) {
+			} finally {
+				try {
+					br.close();
+				} catch (IOException e) {
 					e.printStackTrace();
 				}
 			}
@@ -260,9 +261,9 @@ public class BatchTransactionServlet extends DefaultServlet {
 		if (clientTrans.getUser().getId() == clientInfo.getUser().getId()) {
 			throw new ServiceException(new Throwable("Transfer must be made to a different account"));
 		}
-		//receiver account is approved 
+		// receiver account is approved
 		User receiverUsr = userDAO.loadUser(clientTrans.getToAccountNum());
-		if(receiverUsr.getStatus().compareTo(UserStatus.APPROVED) != 0) {
+		if (receiverUsr.getStatus().compareTo(UserStatus.APPROVED) != 0) {
 			throw new ServiceException(new Throwable("User account is not approved"));
 		}
 		// transfer Code is valid and has not been used and it belongs to the user

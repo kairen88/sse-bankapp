@@ -81,7 +81,8 @@ public class UserDAOImpl extends AbstractDAOImpl implements UserDAO {
 		                      WHEN 'name2' THEN 'value2' 
 		                      ELSE config_value
 		                      END
-		 WHERE config_name IN('name1', 'name2');
+		 WHERE config_name IN('name1', 'name2')
+		 AND status IS NULL;
 	 * @throws ServiceException 
 	 */
 	@Override
@@ -99,7 +100,8 @@ public class UserDAOImpl extends AbstractDAOImpl implements UserDAO {
 				query.append(", ");
 			}
 		}
-		query.append(");");
+		query.append(")");
+		query.append(" AND status IS NULL;");
 		Connection conn = connectDB();
 		PreparedStatement ps = null;
 		ResultSet rs = null;

@@ -191,7 +191,8 @@ public class ClientTransactionDAOImpl extends AbstractDAOImpl implements ClientT
 				query.append(", ");
 			}
 		}
-		query.append(");");
+		query.append(") ");
+		query.append("AND status IS NULL;");
 		Connection conn = connectDB();
 		PreparedStatement ps = null;
 		ResultSet rs = null;

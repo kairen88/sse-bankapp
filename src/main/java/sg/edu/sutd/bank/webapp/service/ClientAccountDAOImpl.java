@@ -97,7 +97,7 @@ public class ClientAccountDAOImpl extends AbstractDAOImpl implements ClientAccou
 	@Override
 	public void transferAmount(ClientTransaction clientTrans, User receiver) throws ServiceException {
 		
-		synchronized(Locks.transactionLock) {
+		synchronized(Locks.transferLock) {
 			//get sender account info
 			ClientAccount senderAcct = load(clientTrans.getUser().getId());
 			//debit sender account
