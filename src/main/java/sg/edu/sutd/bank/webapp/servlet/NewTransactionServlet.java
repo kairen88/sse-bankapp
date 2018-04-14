@@ -151,7 +151,7 @@ public class NewTransactionServlet extends DefaultServlet {
 		}
 		//receiver account is approved 
 		User receiverUsr = userDAO.loadUser(clientTrans.getToAccountNum());
-		if(receiverUsr.getStatus().compareTo(UserStatus.APPROVED) != 0) {
+		if(receiverUsr== null ||receiverUsr.getStatus().compareTo(UserStatus.APPROVED) != 0) {
 			throw new ServiceException(new Throwable("User account is not approved"));
 		}
 		

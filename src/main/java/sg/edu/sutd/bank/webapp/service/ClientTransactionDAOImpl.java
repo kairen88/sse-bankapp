@@ -47,8 +47,8 @@ public class ClientTransactionDAOImpl extends AbstractDAOImpl implements ClientT
 			throw ServiceException.wrap(e);
 		}finally {
 			try {
-				ps.close();
-				conn.close();
+				if (ps != null) ps.close();
+				if (conn != null) conn.close();
 			} catch (SQLException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();

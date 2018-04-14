@@ -57,8 +57,8 @@ public class TransactionCodesDAOImp extends AbstractDAOImpl implements Transacti
 			throw ServiceException.wrap(e);
 		}finally {
 			try {
-				conn.close();
-				ps.close();
+				if(conn != null) conn.close();
+				if(ps != null) ps.close();
 			} catch (SQLException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -130,8 +130,8 @@ public class TransactionCodesDAOImp extends AbstractDAOImpl implements Transacti
 			throw ServiceException.wrap(e);
 		}finally {
 			try {
-				ps.close();
-				conn.close();
+				if(ps != null) ps.close();
+				if(conn != null) conn.close();
 				} catch (SQLException e) {
 				e.printStackTrace();
 			}

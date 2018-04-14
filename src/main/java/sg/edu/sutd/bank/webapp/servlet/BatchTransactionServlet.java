@@ -238,7 +238,7 @@ public class BatchTransactionServlet extends DefaultServlet {
 				e.printStackTrace();
 			} finally {
 				try {
-					br.close();
+					if(br != null) br.close();
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
@@ -263,7 +263,7 @@ public class BatchTransactionServlet extends DefaultServlet {
 		}
 		// receiver account is approved
 		User receiverUsr = userDAO.loadUser(clientTrans.getToAccountNum());
-		if (receiverUsr.getStatus().compareTo(UserStatus.APPROVED) != 0) {
+		if (receiverUsr == null || receiverUsr.getStatus().compareTo(UserStatus.APPROVED) != 0) {
 			throw new ServiceException(new Throwable("User account is not approved"));
 		}
 		// transfer Code is valid and has not been used and it belongs to the user
