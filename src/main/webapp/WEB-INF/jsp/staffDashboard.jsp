@@ -51,6 +51,7 @@
 				<div id="submitBar">
 					<div class="btn-group toolbar" role="group">
 						<button id="regDecisionBtn" type="submit" value="staffDashboard" class="btn btn-default">Update</button>
+						<input type="hidden" name="formValidationId" value="<%= request.getAttribute("formValidationId") %>">						
 					</div>
 				</div>
 			</form>
@@ -92,6 +93,7 @@
 					<div id="submitBar">
 						<div class="btn-group toolbar" role="group">
 							<button id="transDecisionBtn" type="submit" value="staffDashboard" class="btn btn-default">Update</button>
+							<input type="hidden" name="formValidationId" value="<%= request.getAttribute("formValidationId") %>">							
 						</div>
 					</div>
 			</form>

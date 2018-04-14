@@ -50,9 +50,24 @@ public class RegisterServlet extends DefaultServlet {
 	private ClientInfoDAO clientInfoDAO = new ClientInfoDAOImpl();
 	private EmailService emailService = new EmailServiceImp();
 
+	@Override
+	protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+		String sessionId = req.getRequestedSessionId();
+		String formValidationId = StringUtils.hashString(sessionId);
+		req.setAttribute("formValidationId",formValidationId);
+		forward(req, resp);
+	}
+	
 	public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		response.setContentType("text/html");
 		try {
+			//validate form submission for XSS request forgery
+			String sessionId = request.getRequestedSessionId();
+			String sessionHash = StringUtils.hashString(sessionId);
+			String formValidationId = request.getParameter("formValidationId");
+			if(formValidationId.compareTo(sessionHash) != 0)
+				throw new ServiceException(new Throwable("Request Invalid"));
+			
 			User user = new User();
 			user.setUserName(StringUtils.sanitizeString(request.getParameter("username")));
 			String salt = user.generateSalt();

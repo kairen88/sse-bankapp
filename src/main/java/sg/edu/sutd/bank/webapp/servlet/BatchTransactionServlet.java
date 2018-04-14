@@ -72,10 +72,31 @@ public class BatchTransactionServlet extends DefaultServlet {
 	private UserDAO userDAO = new UserDAOImpl();
 
 	@Override
+	protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+		String sessionId = req.getRequestedSessionId();
+		String formValidationId = StringUtils.hashString(sessionId);
+		req.setAttribute("formValidationId",formValidationId);
+		forward(req, resp);
+	}
+	
+	@Override
 	protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-		String actionType = req.getParameter("actionType");
-		if (BATCH_TRANSACTION_ACTION.endsWith(actionType)) {
-			batchTransaction(req, resp);
+		try {
+			//validate form submission for XSS request forgery
+			String sessionId = req.getRequestedSessionId();
+			String sessionHash = StringUtils.hashString(sessionId);
+			String formValidationId = req.getParameter("formValidationId");
+			if(formValidationId.compareTo(sessionHash) != 0)
+				
+					throw new ServiceException(new Throwable("Request Invalid"));
+				
+			
+			String actionType = req.getParameter("actionType");
+			if (BATCH_TRANSACTION_ACTION.endsWith(actionType)) {
+				batchTransaction(req, resp);
+			}
+		} catch (ServiceException e) {
+			sendError(req, e.getMessage());
 		}
 	}
 

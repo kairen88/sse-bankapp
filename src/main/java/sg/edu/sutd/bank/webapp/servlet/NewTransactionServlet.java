@@ -72,6 +72,14 @@ public class NewTransactionServlet extends DefaultServlet {
 	private UserDAO userDAO = new UserDAOImpl();
 
 	@Override
+	protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+		String sessionId = req.getRequestedSessionId();
+		String formValidationId = StringUtils.hashString(sessionId);
+		req.setAttribute("formValidationId",formValidationId);
+		forward(req, resp);
+	}
+	
+	@Override
 	protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 		String actionType = req.getParameter("actionType");
 		if (NEW_TRANSACTION_ACTION.endsWith(actionType)) {
@@ -81,6 +89,13 @@ public class NewTransactionServlet extends DefaultServlet {
 
 	private void newTransaction(HttpServletRequest req, HttpServletResponse resp) throws IOException, ServletException {
 		try {
+			//validate form submission for XSS request forgery
+			String sessionId = req.getRequestedSessionId();
+			String sessionHash = StringUtils.hashString(sessionId);
+			String formValidationId = req.getParameter("formValidationId");
+			if(formValidationId.compareTo(sessionHash) != 0)
+				throw new ServiceException(new Throwable("Request Invalid"));
+			
 			ClientTransaction clientTransaction = new ClientTransaction();
 			User user = new User(getUserId(req));
 			clientTransaction.setUser(user);
@@ -114,9 +129,7 @@ public class NewTransactionServlet extends DefaultServlet {
 						throw new ServiceException(new Throwable("Transaction code is invalid"));
 					}
 				}
-				
-				
-				
+
 				redirect(resp, ServletPaths.CLIENT_DASHBOARD_PAGE);
 			}
 		} catch (ServiceException e) {
@@ -124,6 +137,7 @@ public class NewTransactionServlet extends DefaultServlet {
 			forward(req, resp);
 		}
 	}
+
 
 	private boolean isTransValid(ClientTransaction clientTrans) throws ServiceException {
 		// transfer amount is > 0

@@ -17,6 +17,7 @@
 				</br>
 				<button id="createBatchTransBtn" type="submit" class="btn btn-default">Upload File</button>
 				<input type="hidden" name="actionType" value="batchTransactionAction">
+				<input type="hidden" name="formValidationId" value="<%= request.getAttribute("formValidationId") %>">
 			</form>
 		</div>
 		

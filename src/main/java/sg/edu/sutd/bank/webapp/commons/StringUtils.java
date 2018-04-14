@@ -15,6 +15,8 @@ https://opensource.org/licenses/ECL-2.0
 
 package sg.edu.sutd.bank.webapp.commons;
 
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.text.Normalizer;
 import java.text.Normalizer.Form;
 import java.util.List;
@@ -48,5 +50,24 @@ public class StringUtils {
 			throw new ServiceException(new Throwable("Invalid input detected"));
 		}
 		return str;
+	}
+	
+	public static String hashString(String str) {
+		MessageDigest md;
+		String hashedString = "";
+		try {
+			md = MessageDigest.getInstance("SHA-256");
+		
+			byte[] bytes = md.digest(str.getBytes());
+			StringBuilder sb = new StringBuilder();
+			for (int i = 0; i < bytes.length; i++) {
+				sb.append(Integer.toString((bytes[i] & 0xff) + 0x100, 16).substring(1));
+			}
+			hashedString = sb.toString();
+		} catch (NoSuchAlgorithmException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return hashedString;
 	}
 }

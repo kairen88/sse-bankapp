@@ -26,6 +26,7 @@
 				</div>
 				<button id="createTransBtn" type="submit" class="btn btn-default">Submit</button>
 				<input type="hidden" name="actionType" value="newTransactionAction">
+				<input type="hidden" name="formValidationId" value="<%= request.getAttribute("formValidationId") %>">
 			</form>
 		</div>
 	</div>

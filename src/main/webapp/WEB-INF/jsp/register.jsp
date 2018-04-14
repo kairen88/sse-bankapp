@@ -98,6 +98,7 @@
 					<input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}"/>
 				</div>
 				<button id="registerBtn" type="submit" value="register" class="btn btn-default">Register</button>
+				<input type="hidden" name="formValidationId" value="<%= request.getAttribute("formValidationId") %>">				
 			</form>
 		</div>
 		</div>
