@@ -27,12 +27,12 @@ Set up to run in eclipse
 		+ Under project Servers, open server.xml file, and add Realm configuration at the end of the file: [inside  <Engine> tag]
 		example: (MODIFY according to your local DATABASE CONFIGURATION)
 		 
-			\<Realm className="org.apache.catalina.realm.JDBCRealm"
+			Realm className="org.apache.catalina.realm.JDBCRealm"
 			driverName="org.gjt.mm.mysql.Driver"
 			connectionURL="jdbc:mysql://localhost:3306/bankwebapp"
 			connectionName="root" connectionPassword="mysql@2017"
 			userTable="user" userNameCol="user_name" userCredCol="password"
-			userRoleTable="user_role" roleNameCol="role" />
+			userRoleTable="user_role" roleNameCol="role"
 		
 4. Import project into eclipse
 	Prerequisite: Eclipse with mysql server, web server (tomcat)
