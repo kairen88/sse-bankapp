@@ -20,12 +20,12 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 
 import sg.edu.sutd.bank.webapp.commons.Locks;
 import sg.edu.sutd.bank.webapp.commons.ServiceException;
 import sg.edu.sutd.bank.webapp.model.ClientAccount;
 import sg.edu.sutd.bank.webapp.model.ClientTransaction;
-import sg.edu.sutd.bank.webapp.model.TransactionStatus;
 import sg.edu.sutd.bank.webapp.model.User;
 
 public class ClientAccountDAOImpl extends AbstractDAOImpl implements ClientAccountDAO {
@@ -95,7 +95,67 @@ public class ClientAccountDAOImpl extends AbstractDAOImpl implements ClientAccou
 	}
 	
 	@Override
-	public void transferAmount(ClientTransaction clientTrans, User receiver) throws ServiceException {
+	public ArrayList<ClientAccount> loadAll() throws ServiceException {
+		Connection conn = connectDB();
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+		try {
+			ps = prepareStmt(conn, "SELECT * FROM client_account");
+			rs = ps.executeQuery();
+			
+			ArrayList<ClientAccount> accountList = new ArrayList<>();
+			ClientAccount acct = null;
+			while (rs.next()) {
+				acct = new ClientAccount();
+				User usr = new User();
+				usr.setId(rs.getInt("user_id"));
+				acct.setUser(usr);
+				acct.setAmount(rs.getBigDecimal("amount"));
+				accountList.add(acct);
+			}
+			return accountList;
+			
+		} catch (SQLException e) {
+			throw ServiceException.wrap(e);
+		} finally {
+			closeDb(conn, ps, rs);
+		}
+	}
+	
+	@Override
+	public void transferAmount (ClientTransaction clientTrans, User receiver) throws Exception {	
+		Object fromAcctLock = Locks.accountLocks.get(clientTrans.getUser().getId());
+		Object toAcctLock = Locks.accountLocks.get(receiver.getId());
+		
+		int fromHash = System.identityHashCode(fromAcctLock); 
+		int toHash = System.identityHashCode(toAcctLock);
+		
+		if (fromHash < toHash) {
+			synchronized (fromAcctLock) {
+				synchronized (toAcctLock) {
+					transfer(clientTrans, receiver);
+				}
+			}
+		}
+		else if (fromHash > toHash) {
+			synchronized (toAcctLock) {
+				synchronized (fromAcctLock) {
+					transfer(clientTrans, receiver);
+				}
+			}			
+		}
+		else {
+			synchronized (Locks.accountTieLock) {
+				synchronized (fromAcctLock) {
+					synchronized (toAcctLock) {
+						transfer(clientTrans, receiver);
+					}
+				}
+			}
+		}
+	}
+	
+	private void transfer(ClientTransaction clientTrans, User receiver) throws ServiceException {
 		
 		synchronized(Locks.transferLock) {
 			//get sender account info

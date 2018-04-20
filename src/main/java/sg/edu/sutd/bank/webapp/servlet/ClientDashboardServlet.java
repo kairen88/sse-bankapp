@@ -35,7 +35,7 @@ public class ClientDashboardServlet extends DefaultServlet {
 	private ClientInfoDAO clientInforDao = new ClientInfoDAOImpl();
 	
 	@Override
-	protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+	public void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 		try {
 			ClientInfo clientInfo = clientInforDao.loadAccountInfo(req.getRemoteUser());
 			req.getSession().setAttribute("clientInfo", clientInfo);

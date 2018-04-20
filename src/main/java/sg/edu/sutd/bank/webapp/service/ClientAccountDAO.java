@@ -15,6 +15,8 @@ https://opensource.org/licenses/ECL-2.0
 
 package sg.edu.sutd.bank.webapp.service;
 
+import java.util.ArrayList;
+
 import sg.edu.sutd.bank.webapp.commons.ServiceException;
 import sg.edu.sutd.bank.webapp.model.ClientAccount;
 import sg.edu.sutd.bank.webapp.model.ClientTransaction;
@@ -29,6 +31,8 @@ public interface ClientAccountDAO {
 	
 	ClientAccount load(int userId) throws ServiceException;
 	
-	void transferAmount(ClientTransaction clientTrans, User receiver) throws ServiceException;
-
+	public ArrayList<ClientAccount> loadAll() throws ServiceException;
+	
+	public void transferAmount (ClientTransaction clientTrans, User receiver) throws Exception;
+	
 }

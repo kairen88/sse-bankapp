@@ -16,6 +16,7 @@ https://opensource.org/licenses/ECL-2.0
 package sg.edu.sutd.bank.webapp.servlet;
 
 import java.io.IOException;
+import java.util.ArrayList;
 
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
@@ -25,13 +26,32 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import sg.edu.sutd.bank.webapp.commons.Locks;
+import sg.edu.sutd.bank.webapp.commons.ServiceException;
+import sg.edu.sutd.bank.webapp.model.ClientAccount;
+import sg.edu.sutd.bank.webapp.service.ClientAccountDAO;
+import sg.edu.sutd.bank.webapp.service.ClientAccountDAOImpl;
+
 
 @WebServlet("/")
 public class DefaultServlet extends HttpServlet {
 	private static final long serialVersionUID = 1L;
+	private ClientAccountDAO clientAcctDAO = new ClientAccountDAOImpl();
+	
+	public DefaultServlet() {
+		try {
+			ArrayList<ClientAccount> accountList = clientAcctDAO.loadAll();
+			for(ClientAccount acct : accountList)
+			{
+				Locks.accountLocks.put(acct.getUser().getId(), new Object());
+			}
+		} catch (ServiceException e) {
+			e.printStackTrace();
+		}
+	}
 
 	@Override
-	protected void doGet(HttpServletRequest req, HttpServletResponse resp)
+	public void doGet(HttpServletRequest req, HttpServletResponse resp)
 			throws ServletException, IOException {
 		if (ServletPaths.LOGOUT.equals(req.getServletPath())) {
 			logout(req);
@@ -43,23 +63,23 @@ public class DefaultServlet extends HttpServlet {
 		}
 	}
 
-	protected void forward(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+	public void forward(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 		forward(req.getServletPath(), req, resp);
 	}
 	
-	protected void sendError(HttpServletRequest req, String msg) {
+	public void sendError(HttpServletRequest req, String msg) {
 		req.getSession().setAttribute("req_error", msg);
 	}
 	
-	protected int getUserId(HttpServletRequest req) {
+	public int getUserId(HttpServletRequest req) {
 		return (int) req.getSession().getAttribute("user_id");
 	}
 	
-	protected void setUserId(HttpServletRequest req, Integer userId) {
+	public void setUserId(HttpServletRequest req, Integer userId) {
 		req.getSession(false).setAttribute("user_id", userId);
 	}
 	
-	protected void sendMsg(HttpServletRequest req, String msg) {
+	public void sendMsg(HttpServletRequest req, String msg) {
 		req.getSession().setAttribute("req_msg", msg);
 	}
 	
@@ -71,22 +91,22 @@ public class DefaultServlet extends HttpServlet {
 		}
 	}
 	
-	protected void forward(String path, HttpServletRequest req, HttpServletResponse resp)
+	public void forward(String path, HttpServletRequest req, HttpServletResponse resp)
 			throws ServletException, IOException {
 		RequestDispatcher view = req.getRequestDispatcher(getPath(path));
 		if(view != null)
 			view.forward(req, resp);
 	}
 	
-	protected void redirect(HttpServletResponse resp, String templage) throws IOException {
+	public void redirect(HttpServletResponse resp, String templage) throws IOException {
 		resp.sendRedirect(getRedirectPath(templage));
 	}
 
-	protected String getPath(String template) {
+	public String getPath(String template) {
 		return "WEB-INF/jsp" + template + ".jsp";
 	}
 	
-	protected String getRedirectPath(String template) {
+	public String getRedirectPath(String template) {
 		return "/sutdbank" + template;
 	}
 }

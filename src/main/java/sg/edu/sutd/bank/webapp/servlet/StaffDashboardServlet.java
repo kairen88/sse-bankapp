@@ -63,7 +63,7 @@ public class StaffDashboardServlet extends DefaultServlet {
 	private ClientTransactionDAO clientTransactionDAO = new ClientTransactionDAOImpl();
 
 	@Override
-	protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+	public void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 		try {
 			//set form validation id
 			String sessionId = req.getRequestedSessionId();
@@ -201,7 +201,7 @@ public class StaffDashboardServlet extends DefaultServlet {
 						}
 					}
 				}
-			} catch (ServiceException e) {
+			} catch (Exception e) {
 				sendError(req, e.getMessage());
 			}
 		}

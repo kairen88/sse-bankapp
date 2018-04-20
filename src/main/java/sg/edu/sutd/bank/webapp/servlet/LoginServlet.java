@@ -39,7 +39,7 @@ public class LoginServlet extends DefaultServlet {
 	private UserDAO userDAO = new UserDAOImpl();
 
 	@Override
-	protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+	public void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 		try {
 			String userName = StringUtils.sanitizeString(req.getParameter("username"));
 			User user = userDAO.loadUser(userName);

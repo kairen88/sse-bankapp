@@ -165,11 +165,11 @@ public class BatchTransactionServlet extends DefaultServlet {
 
 					}
 				}
-			} catch (ServiceException e) {
+			} catch (Exception e) {
 				sendError(req, e.getMessage());
 				forward(req, resp);
 			}
-//			redirect(resp, ServletPaths.CLIENT_DASHBOARD_PAGE);
+			redirect(resp, ServletPaths.CLIENT_DASHBOARD_PAGE);
 		}
 	}
 

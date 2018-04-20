@@ -23,6 +23,7 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import sg.edu.sutd.bank.webapp.commons.Locks;
 import sg.edu.sutd.bank.webapp.commons.ServiceException;
 import sg.edu.sutd.bank.webapp.commons.StringUtils;
 import sg.edu.sutd.bank.webapp.model.ClientInfo;
@@ -51,7 +52,7 @@ public class RegisterServlet extends DefaultServlet {
 	private EmailService emailService = new EmailServiceImp();
 
 	@Override
-	protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+	public void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 		String sessionId = req.getRequestedSessionId();
 		String formValidationId = StringUtils.hashString(sessionId);
 		req.setAttribute("formValidationId",formValidationId);
@@ -95,6 +96,9 @@ public class RegisterServlet extends DefaultServlet {
 			userRole.setRole(Role.client);
 			userRoleDAO.create(userRole );
 			emailService.sendMail(clientAccount.getEmail(), "SutdBank registration", "Thank you for the registration!");
+			//add new lock object for new account
+			Locks.accountLocks.put(clientAccount.getUser().getId(), new Object());
+			
 			sendMsg(request, "You are successfully registered...");
 			redirect(response, ServletPaths.WELCOME);
 		} catch (ServiceException e) {

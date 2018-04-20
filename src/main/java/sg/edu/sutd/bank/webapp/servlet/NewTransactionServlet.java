@@ -72,7 +72,7 @@ public class NewTransactionServlet extends DefaultServlet {
 	private UserDAO userDAO = new UserDAOImpl();
 
 	@Override
-	protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+	public void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 		String sessionId = req.getRequestedSessionId();
 		String formValidationId = StringUtils.hashString(sessionId);
 		req.setAttribute("formValidationId",formValidationId);
@@ -80,7 +80,7 @@ public class NewTransactionServlet extends DefaultServlet {
 	}
 	
 	@Override
-	protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+	public void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 		String actionType = req.getParameter("actionType");
 		if (NEW_TRANSACTION_ACTION.endsWith(actionType)) {
 			newTransaction(req, resp);
@@ -132,7 +132,7 @@ public class NewTransactionServlet extends DefaultServlet {
 
 				redirect(resp, ServletPaths.CLIENT_DASHBOARD_PAGE);
 			}
-		} catch (ServiceException e) {
+		} catch (Exception e) {
 			sendError(req, e.getMessage());
 			forward(req, resp);
 		}
