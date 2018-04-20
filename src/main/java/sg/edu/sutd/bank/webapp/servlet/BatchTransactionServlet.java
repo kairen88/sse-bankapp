@@ -73,7 +73,7 @@ public class BatchTransactionServlet extends DefaultServlet {
 	private UserDAO userDAO = new UserDAOImpl();
 
 	@Override
-	protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+	public void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 		String sessionId = req.getRequestedSessionId();
 		String formValidationId = StringUtils.hashString(sessionId);
 		req.setAttribute("formValidationId", formValidationId);
@@ -81,7 +81,7 @@ public class BatchTransactionServlet extends DefaultServlet {
 	}
 
 	@Override
-	protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+	public void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 		try {
 			// validate form submission for XSS request forgery
 			String sessionId = req.getRequestedSessionId();
@@ -147,7 +147,7 @@ public class BatchTransactionServlet extends DefaultServlet {
 						if (transAmt.compareTo(new BigDecimal(10.0)) < 0) {
 							synchronized (Locks.transactionLock) {
 								ClientTransaction trans = clientTransactionDAO.load(transDetails[0]);
-								if (trans != null && trans.getStatus().compareTo(TransactionStatus.APPROVED) == 0) {
+								if (trans != null) {
 									trans.setStatus(TransactionStatus.APPROVED);
 									List<ClientTransaction> transactions = new ArrayList<ClientTransaction>();
 									transactions.add(trans);
@@ -169,7 +169,7 @@ public class BatchTransactionServlet extends DefaultServlet {
 				sendError(req, e.getMessage());
 				forward(req, resp);
 			}
-			redirect(resp, ServletPaths.CLIENT_DASHBOARD_PAGE);
+//			redirect(resp, ServletPaths.CLIENT_DASHBOARD_PAGE);
 		}
 	}
 
